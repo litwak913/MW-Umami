@@ -114,6 +114,7 @@ class Hooks {
 		if ( empty( $idSite ) || empty( $umamiURL ) ) {
 			return '<!-- You need to set the settings for Umami -->';
 		}
+		$umamiTagArgs["data-website-id"]=$idSite;
 		if($dnt===true){
 			$umamiTagArgs['data-do-not-track'] = "true";
 		}
