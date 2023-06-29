@@ -166,6 +166,7 @@ class Hooks {
 				var _interval = setInterval(() => {
 					_count++;
 					if (typeof umami !== "undefined") {
+						console.log('umami loaded');
 						clearInterval(_interval);
 						$coreJS
 						$customJS
