@@ -1,0 +1,42 @@
+{
+	"name": "Umami",
+	"version": "4.0.1",
+	"author": [
+		"Litwak913"
+	],
+	"url": "https://github.com/litwak913/MW-Umami",
+	"description": "Adding Umami Tracking Code.Modified from Extension:Matomo",
+	"license-name": "GPL-2.0-or-later",
+	"type": "other",
+	"requires": {
+		"MediaWiki": ">= 1.25.0"
+	},
+	"config": {
+		"UmamiWebsiteID": "",
+		"UmamiURL": "",
+		"UmamiIgnoreSysops": true,
+		"UmamiIgnoreBots": true,
+		"UmamiCustomJS": "",
+		"UmamiTrackUsernames": false,
+		"UmamiJSFile": "umami.js",
+		"UmamiHostURL":"",
+		"UmamiDNT":true,
+		"UmamiCache":false,
+		"UmamiDomains":[]
+	},
+	"Hooks": {
+		"BeforePageDisplay": [
+			"MediaWiki\\Extension\\Umami\\Hooks::UmamiSetup"
+		],
+		"SpecialSearchResults": [
+			"MediaWiki\\Extension\\Umami\\Hooks::onSpecialSearchResults"
+		],
+		"SpecialSearchSetupEngine": [
+			"MediaWiki\\Extension\\Umami\\Hooks::onSpecialSearchSetupEngine"
+		]
+	},
+	"AutoloadClasses": {
+		"MediaWiki\\Extension\\Umami\\Hooks": "src/Hooks.php"
+	},
+	"manifest_version": 1
+}
