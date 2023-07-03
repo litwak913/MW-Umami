@@ -11,6 +11,9 @@
 	"requires": {
 		"MediaWiki": ">= 1.25.0"
 	},
+	"ConfigRegistry": {
+		"Umami": "GlobalVarConfig::newInstance"
+	},
 	"config": {
 		"UmamiWebsiteID": "",
 		"UmamiURL": "",
@@ -22,7 +25,8 @@
 		"UmamiHostURL":"",
 		"UmamiDNT":true,
 		"UmamiCache":false,
-		"UmamiDomains":[]
+		"UmamiDomains":[],
+		"UmamiMWTrack":false
 	},
 	"Hooks": {
 		"BeforePageDisplay": [

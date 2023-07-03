@@ -4,16 +4,19 @@ namespace MediaWiki\Extension\Umami;
 
 use FormatJson;
 use RequestContext;
-use Xml;
+use TemplateParser;
 use SearchResultSet;
 use Html;
+use MediaWiki\MediaWikiServices;
+use Config;
 
 class Hooks {
 
 	/** @var string|null Searched term in Special:Search. */
 	public static $searchTerm = null;
-
-	/** @var string|null Search profile in Special:Search (search category in Piwik vocabulary). */
+	/** @var Config|null Extension Config */
+	public static $config=null;
+	/** @var string|null Search profile in Special:Search. */
 	public static $searchProfile = null;
 
 	/** @var int|null Number of results in Special:Search. */
@@ -27,6 +30,7 @@ class Hooks {
 	 * @return bool
 	 */
 	public static function UmamiSetup( $out, $skin ) {
+		self::$config=MediaWikiServices::getInstance()->getConfigFactory()->makeConfig("Umami");
 		$out->addHeadItem( 'umami', self::addUmami( $skin->getTitle() ) );
 	}
 
@@ -37,9 +41,8 @@ class Hooks {
 	 * @return mixed|null Parameter value.
 	 */
 	public static function getParameter( $name ) {
-		$config = \MediaWiki\MediaWikiServices::getInstance()->getMainConfig();
-		if ( $config->has( "Umami$name" ) ) {
-			return $config->get( "Umami$name" );
+		if ( self::$config->has( "Umami$name" ) ) {
+			return self::$config->get( "Umami$name" );
 		}
 		return null;
 	}
@@ -103,23 +106,28 @@ class Hooks {
 		$customJS = self::getParameter( 'CustomJS' );
 		$jsFile = self::getParameter( 'JSFile' );
 		$hostURL = self::getParameter('HostURL');
+		$mwTrack = self::getParameter('MWTrack');
 		$dnt=self::getParameter('DNT');
 		$cache=self::getParameter('Cache');
-		$coreJS='';
 		$domains=self::getParameter('Domains');
 		$umamiTagArgs = [];
+		$umamiTemplateArgs = [];
 		$umamiTagArgs['async'] = '';
 		$umamiTagArgs["data-auto-track"]="false";
 		// Missing configuration parameters
 		if ( empty( $idSite ) || empty( $umamiURL ) ) {
 			return '<!-- You need to set the settings for Umami -->';
 		}
+		$templateParser = new TemplateParser(__DIR__ );
 		$umamiTagArgs["data-website-id"]=$idSite;
 		if($dnt===true){
 			$umamiTagArgs['data-do-not-track'] = "true";
 		}
 		if($cache===true){
 			$umamiTagArgs['data-cache'] = "true";
+		}
+		if($mwTrack===true){
+			$umamiTemplateArgs['enableMWTrack']=true;
 		}
 		if(!empty($domains)){
 			$umamiTagArgs['data-domains'] = implode(',',$domains);
@@ -140,12 +148,7 @@ class Hooks {
 		} else { 
 			$customJs = null;
 		}
-		if ( self::getParameter( 'TrackUsernames' ) && !$user->isAnon() ) {
-			$username = Xml::encodeJsVar( $user->getName() );
-			$coreJS .= "umami.track(props => ({ ...props, username:$username }));". PHP_EOL;
-		} else {
-			$coreJS .= "umami.track();". PHP_EOL;
-		}
+		$umamiTemplateArgs['customJS']=$customJS;
 		$searchEvent=[];
 		if ( self::$searchTerm !== null ) {
 			$searchEvent['search'] = self::$searchTerm;
@@ -155,31 +158,12 @@ class Hooks {
 			if ( self::$searchCount !== null ) {
 				$searchEvent['search_count'] = self::$searchCount ;
 			}
-			$searchEventJson=FormatJson::encode($searchEvent);
-			$coreJS .= "umami.track('search',$searchEventJson);". PHP_EOL;
+			$umamiTemplateArgs['searchEventJson']=FormatJson::encode($searchEvent);
 		}
 		$umamiTagArgs['src']="$umamiURL/$jsFile";
 		$umamiLoad = Html::element('script',$umamiTagArgs);
-		$script = <<<UMAMI
-		!(function() {
-			RLQ.push(() => {
-				var _count = 0;
-				var _interval = setInterval(() => {
-					_count++;
-					if (typeof umami !== "undefined") {
-						console.log('umami loaded');
-						clearInterval(_interval);
-						$coreJS
-						$customJS
-					} else if (_count > 30 * 5) {
-						clearInterval(_interval);
-					}
-				}, 200);
-			});
-		})();  
-		UMAMI;
-		$umamiScript=Html::element('script',[],$script);
-
+		$script = $templateParser->processTemplate("Script",$umamiTemplateArgs);
+		$umamiScript=Html::rawElement('script',[],$script);
 		return $umamiLoad.$umamiScript;
 	}
 

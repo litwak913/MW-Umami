@@ -1,0 +1,26 @@
+!(function() {
+	RLQ.push(() => {
+		var _count = 0;
+		var _interval = setInterval(() => {
+			_count++;
+			{{#enableMWTrack}} 
+			if (typeof umami !== "undefined" && typeof mw.trackSubscribe !== "undefined") {
+			{{/enableMWTrack}}
+			{{^enableMWTrack}}
+			if (typeof umami !== "undefined") {
+			{{/enableMWTrack}}
+				clearInterval(_interval);
+				umami.track();
+				{{#searchEventJson}}
+				umami.track('search',{{{searchEventJson}}});
+				{{/searchEventJson}}
+				{{#enableMWTrack}}
+				mw.trackSubscribe( '', umami.track );
+				{{/enableMWTrack}}
+				{{{customJS}}}
+			} else if (_count > 30 * 5) {
+				clearInterval(_interval);
+			}
+		}, 200);
+	});
+})();
